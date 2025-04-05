@@ -61,6 +61,11 @@ class Settings(BaseSettings):
         ...,
         description="Default sender email address"
     )
+
+    BASE_URL: str = Field(
+        ...,
+        description="Base URL for the HDR service"
+    )
     
     class Config:
         env_file = ".env"

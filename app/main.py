@@ -1,9 +1,12 @@
 # app/main.py
-from fastapi import FastAPI, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware  # Import CORSMiddleware
-# from .api import users_router, employee_router, country_router, common_router, role_router, visa_router, vendor_router  # Import country routes 
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from app.helpers.auth import verify_bearer_token  # Import the token verification function
 from .config.database import Base, engine
+from .api import application_router  # Import application routes
 from dotenv import load_dotenv
 import uvicorn
 import argparse
@@ -24,14 +27,17 @@ app.add_middleware(
     expose_headers=["*"],  # Exposes all headers in the response
 )
 
+app.include_router(application_router, dependencies=[Depends(verify_bearer_token)])
 
 
 @app.get("/health", status_code=status.HTTP_200_OK)
 def health_check():
     """
     Endpoint to check the health of the API.
+    Requires a valid JWT token for access.
     """
     return JSONResponse(content={"status": "ok"})
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
