@@ -1,12 +1,4 @@
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Enum,
-    DateTime,
-    ForeignKey,
-    func
-)
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, func
 from sqlalchemy.orm import relationship
 from app.config.database import Base
 from app.models.enums import REMARK_TYPE_ENUM, IS_INTERNAL_ENUM
@@ -26,4 +18,5 @@ class ApplicationRemarks(Base):
     created_date = Column(DateTime, server_default=func.now())
     is_internal = Column(IS_INTERNAL_ENUM, default="NO")
 
-    application = relationship('Applications', backref="application_remarks")
+    # Relationship
+    application = relationship('Applications', back_populates="remarks")

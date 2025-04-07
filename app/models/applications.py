@@ -1,12 +1,4 @@
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    DateTime,
-    Boolean,
-    ForeignKey,
-    func
-)
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, func
 from sqlalchemy.orm import relationship
 from app.config.database import Base
 from app.models.enums import GENDER_ENUM, APPLICATION_STATUS_ENUM
@@ -42,14 +34,11 @@ class Applications(Base):
     is_priority = Column(Boolean, default=False)
     is_escilated = Column(Boolean, default=False)
 
-    # Relationship with VisaRequest
-    visa_request = relationship('VisaRequest', backref="visa_applications", lazy="joined")
-
-    # Relationship with ApplicationDetails
-    application_details = relationship('ApplicationDetails', backref="application", cascade="all, delete-orphan")
-
-    # Relationship with ApplicationRemarks
-    application_remarks = relationship('ApplicationRemarks', backref="application", cascade="all, delete-orphan")
-
-    # Relationship with ApplicationAssignmentHistory
-    assignment_history = relationship('ApplicationAssignmentHistory', backref="application", cascade="all, delete-orphan")
+    # Relationships
+    visa_request = relationship('VisaRequest', back_populates="applications")
+    details = relationship('ApplicationDetails', back_populates="application", 
+                         cascade="all, delete-orphan")
+    remarks = relationship('ApplicationRemarks', back_populates="application",
+                         cascade="all, delete-orphan")
+    assignments = relationship('ApplicationAssignmentHistory', back_populates="application",
+                             cascade="all, delete-orphan")

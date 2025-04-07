@@ -47,9 +47,9 @@ def create_visa_request(
 
     # Create the visa request
     db_visa_request = models.VisaRequest(**visa_request_data)
-    # db.add(db_visa_request)
-    # db.commit()
-    # db.refresh(db_visa_request)
+    db.add(db_visa_request)
+    db.commit()
+    db.refresh(db_visa_request)
     return db_visa_request
 
 def get_visa_request(db: Session, visa_request_id: int):

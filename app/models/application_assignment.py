@@ -1,14 +1,5 @@
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Enum,
-    DateTime,
-    ForeignKey,
-    func
-)
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, func
 from sqlalchemy.orm import relationship
-
 from app.config.database import Base
 from app.models.enums import ASSIGNMENT_STATUS_ENUM
 
@@ -27,5 +18,5 @@ class ApplicationAssignmentHistory(Base):
     remarks = Column(String, nullable=True)
     assignment_status = Column(ASSIGNMENT_STATUS_ENUM, nullable=True)
 
-
-    application = relationship('Applications', backref="assignment_history")
+    # Relationship
+    application = relationship('Applications', back_populates="assignments")

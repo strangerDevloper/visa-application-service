@@ -57,4 +57,4 @@ class VisaRequest(Base):
     visa_request_notes = Column(String, nullable=True)
 
     # Relationship with Applications
-    visa_applications = relationship('Applications', backref="visa_request")
+    applications = relationship('Applications', back_populates="visa_request")

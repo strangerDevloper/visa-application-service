@@ -144,6 +144,7 @@ class VisaRequestCreate(BaseModel):
     - user_id
     - vendor_id
     """
+    visa_process_id: int
     visa_type: str
     country_id: int
     country_name: str
