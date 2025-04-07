@@ -8,11 +8,9 @@ from sqlalchemy import (
     func
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from app.config.database import Base
+from app.models.enums import GENDER_ENUM, APPLICATION_STATUS_ENUM
 
-from app.models.enums import GENDER_ENUM, VISA_STATUS_ENUM
-
-Base = declarative_base()
 
 class Applications(Base):
     __tablename__ = "applications"
@@ -30,7 +28,7 @@ class Applications(Base):
     applicant_dob = Column(DateTime, nullable=False)
     applicant_gender = Column(GENDER_ENUM, nullable=False)
     
-    visa_status = Column(VISA_STATUS_ENUM, default="PENDING")
+    application_status = Column(APPLICATION_STATUS_ENUM, default="PENDING")
     submission_date = Column(DateTime, server_default=func.now())
     modified_date = Column(DateTime, onupdate=func.now())
     active_status = Column(Boolean, default=True)
@@ -45,7 +43,7 @@ class Applications(Base):
     is_escilated = Column(Boolean, default=False)
 
     # Relationship with VisaRequest
-    visa_request = relationship('VisaRequest', backref="applications", lazy="joined")
+    visa_request = relationship('VisaRequest', backref="visa_applications", lazy="joined")
 
     # Relationship with ApplicationDetails
     application_details = relationship('ApplicationDetails', backref="application", cascade="all, delete-orphan")

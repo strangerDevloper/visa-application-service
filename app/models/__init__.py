@@ -6,6 +6,7 @@ from .application_assignment import ApplicationAssignmentHistory
 from .enums import (
     GENDER_ENUM,
     VISA_STATUS_ENUM,
+    APPLICATION_STATUS_ENUM,
     COUPON_TYPE_ENUM,
     PAYMENT_STATUS_ENUM,
     FIELD_TYPE_ENUM,
@@ -24,6 +25,7 @@ __all__ = [
     "ApplicationAssignmentHistory",
     "GENDER_ENUM",
     "VISA_STATUS_ENUM",
+    "APPLICATION_STATUS_ENUM",
     "COUPON_TYPE_ENUM",
     "PAYMENT_STATUS_ENUM",
     "FIELD_TYPE_ENUM",

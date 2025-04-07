@@ -8,11 +8,9 @@ from sqlalchemy import (
     func
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from app.config.database import Base
 from app.models.enums import REMARK_TYPE_ENUM, IS_INTERNAL_ENUM
 
-
-Base = declarative_base()
 
 class ApplicationRemarks(Base):
     __tablename__ = "application_remarks"

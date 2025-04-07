@@ -9,11 +9,10 @@ from sqlalchemy import (
     func
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 
+from app.config.database import Base
 from app.models.enums import COUPON_TYPE_ENUM, PAYMENT_STATUS_ENUM, VISA_STATUS_ENUM
 
-Base = declarative_base()
 
 class VisaRequest(Base):
     __tablename__ = "visa_request"
@@ -50,7 +49,7 @@ class VisaRequest(Base):
     coupon_id = Column(Integer, nullable=True)
     coupon_type = Column(COUPON_TYPE_ENUM, nullable=True)
 
-    visa_status = Column(VISA_STATUS_ENUM, default="PENDING")
+    visa_status = Column(VISA_STATUS_ENUM, default="DRAFT")
 
     created_date = Column(DateTime, server_default=func.now())
     modified_date = Column(DateTime, onupdate=func.now())
@@ -58,4 +57,4 @@ class VisaRequest(Base):
     visa_request_notes = Column(String, nullable=True)
 
     # Relationship with Applications
-    applications = relationship('Applications', backref="visa_request")
+    visa_applications = relationship('Applications', backref="visa_request")

@@ -8,24 +8,30 @@ The project is organized as follows:
 
 ```
 visa-application-service/
-├── app/                # Core application logic
-│   ├── controllers/    # Handles HTTP requests and responses
-│   ├── middlewares/    # Custom middleware functions
-│   ├── models/         # Defines data models and schemas
-│   ├── routes/         # API route definitions
-│   ├── services/       # Business logic and service layer
-│   └── utils/          # Utility functions and helpers
-├── config/             # Configuration files (e.g., environment variables, database config)
-├── database/           # Database migration and seed files
-├── public/             # Static assets (if applicable)
-├── tests/              # Unit and integration tests
-├── docs/               # Documentation and API specs
-├── scripts/            # Automation and helper scripts
-├── .env                # Environment variables (not included in version control)
-├── .gitignore          # Git ignore rules
-├── package.json        # Project metadata and dependencies
-├── README.md           # Project overview and instructions
-└── LICENSE             # License information
+├── app/
+│   ├── init.py               # Package initialization
+│   ├── main.py               # FastAPI application entry point
+│   ├── config/               # Service Config
+│   │   ├── aws.py
+│   │   └── database.py       # Database connection and session management
+│   ├── models/               # SQLAlchemy models
+│   │   ├── init.py
+│   │   └── applications.py          # application models
+│   ├── api/                  # API endpoints
+│   │   ├── init.py
+│   │   └── application/             # application domain API
+│   │       ├── init.py
+│   │       ├── application_routes.py  # application API routes
+│   │       ├── application.service.py # application business logic
+│   │       └── application.types.py   # application Pydantic schemas/types
+│   ├── helpers/                 # utilities
+│   │   ├── init.py
+│   │   └── auth.py             # Authentication helper functions
+├── alembic/                    # Alembic migration files
+├── visa_venv/                  # Virtual environment
+├── .env                        # Environment variables
+├── requirements.txt            # Project dependencies
+└── README.md                   # Project documentation
 ```
 
 ## Getting Started

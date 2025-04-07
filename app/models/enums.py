@@ -4,7 +4,10 @@ from sqlalchemy import Enum
 GENDER_ENUM = Enum("MALE", "FEMALE", "OTHER", name="gender_enum")
 
 # Visa Status Enum
-VISA_STATUS_ENUM = Enum("PENDING", "APPROVED", "REJECTED", "PROCESSING", name="visa_status_enum")
+VISA_STATUS_ENUM = Enum("DRAFT","PENDING", "APPROVED", "REJECTED", "PROCESSING", name="visa_status_enum")
+
+# Application Status Enum
+APPLICATION_STATUS_ENUM = Enum("DRAFT","PENDING", "APPROVED", "REJECTED", "PROCESSING", name="application_status_enum")
 
 # Coupon Type Enum
 COUPON_TYPE_ENUM = Enum("FLAT", "PERCENTAGE", name="coupon_type_enum")

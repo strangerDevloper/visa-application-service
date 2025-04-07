@@ -9,11 +9,10 @@ from sqlalchemy import (
     func
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from app.config.database import Base
 from app.models.enums import FIELD_TYPE_ENUM, DOCUMENT_TYPE_ENUM, VERIFICATION_STATUS_ENUM
 
 
-Base = declarative_base()
 
 class ApplicationDetails(Base):
     __tablename__ = "application_details"
