@@ -1,7 +1,7 @@
 # schemas.py
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum
 
 class GenderEnum(str, Enum):
@@ -133,9 +133,34 @@ class AssignmentHistoryBase(BaseModel):
     assignment_status: Optional[AssignmentStatusEnum] = None
 
 # Create schemas
-class VisaRequestCreate(VisaRequestBase):
-    pass
-
+class VisaRequestCreate(BaseModel):
+    """
+    Schema for creating a Visa Request.
+    The following fields will be populated programmatically:
+    - initiator_name
+    - initiator_email
+    - initiator_phone
+    - initiator_address
+    - user_id
+    - vendor_id
+    """
+    visa_type: str
+    country_id: int
+    country_name: str
+    total_applicants: int
+    application_fee: int
+    visa_fee: int
+    service_fee: int
+    total_fee: int
+    total_fee_currency: str
+    amount_paid: int
+    amount_due: int
+    payment_status: PaymentStatusEnum = PaymentStatusEnum.PENDING
+    coupon_code: Optional[str] = None
+    coupon_discount: Optional[int] = None
+    coupon_id: Optional[int] = None
+    coupon_type: Optional[CouponTypeEnum] = None
+    visa_request_notes: Optional[str] = None
 class ApplicationCreate(ApplicationBase):
     pass
 

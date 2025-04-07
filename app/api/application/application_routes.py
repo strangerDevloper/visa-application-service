@@ -1,16 +1,29 @@
 # app/api/application/application_routes.py
+import random
+import string
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
 from app.config.database import get_db
 from app.api.application import application_types, application_service
+from app.helpers.auth import verify_bearer_token
 
 router = APIRouter(prefix="/application", tags=["application"])
 
 @router.post("/visa-requests/", response_model=application_types.VisaRequest)
-def create_visa_request(visa_request: application_types.VisaRequestCreate, db: Session = Depends(get_db)):
-    return application_service.create_visa_request(db=db, visa_request=visa_request)
+def create_visa_request(
+    visa_request: application_types.VisaRequestCreate,
+    db: Session = Depends(get_db),
+    user_details: dict = Depends(verify_bearer_token)  # Add this dependency
+):
+    # Pass user_details to the service layer
+    return application_service.create_visa_request(
+        db=db, 
+        visa_request=visa_request,
+        user_details=user_details
+    )
+
 
 @router.get("/visa-requests/", response_model=List[application_types.VisaRequest])
 def read_visa_requests(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

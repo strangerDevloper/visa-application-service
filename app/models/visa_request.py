@@ -30,7 +30,7 @@ class VisaRequest(Base):
     initiator_email = Column(String(100), nullable=False)
     initiator_phone = Column(String(20), nullable=False)
     initiator_address = Column(String, nullable=False)
-    user_id = Column(Integer,  nullable=True)
+    user_id = Column(Integer, nullable=True)
     vendor_id = Column(Integer, nullable=True)
  
     total_applicants = Column(Integer, nullable=False)

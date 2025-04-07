@@ -1,15 +1,55 @@
 # crud.py
+import random
+import string
 from sqlalchemy.orm import Session
 
 from app import models
+from app.api.application.application_utils import generate_visa_request_code
+from app.core.constants import UserType
 from .  import application_types
 
 
-def create_visa_request(db: Session, visa_request: application_types.VisaRequestCreate):
-    db_visa_request = models.VisaRequest(**visa_request.dict())
-    db.add(db_visa_request)
-    db.commit()
-    db.refresh(db_visa_request)
+def create_visa_request(
+    db: Session, 
+    visa_request: application_types.VisaRequestCreate,
+    user_details: dict
+):
+    """
+    Create a new visa request.
+    - Auto-generates `visa_request_code`.
+    - Populates initiator details and user/vendor ID based on `user_details`.
+    """
+    # Auto-generate visa_request_code
+    visa_request_code = generate_visa_request_code(db)
+
+    # Populate initiator details and user/vendor ID based on user type
+    initiator_name = user_details.get("name")
+    initiator_email = user_details.get("email")
+    initiator_phone = user_details.get("contact_number")
+    initiator_address = user_details.get("address")
+
+    user_id = None
+    vendor_id = None
+    if user_details.get("user_type") == UserType.USER:
+        user_id = user_details.get("user_id")
+    elif user_details.get("user_type") == UserType.VENDOR:
+        vendor_id = user_details.get("user_id")
+
+    # Prepare visa request data
+    visa_request_data = visa_request.dict()
+    visa_request_data["visa_request_code"] = visa_request_code
+    visa_request_data["initiator_name"] = initiator_name
+    visa_request_data["initiator_email"] = initiator_email
+    visa_request_data["initiator_phone"] = initiator_phone
+    visa_request_data["initiator_address"] = initiator_address
+    visa_request_data["user_id"] = user_id
+    visa_request_data["vendor_id"] = vendor_id
+
+    # Create the visa request
+    db_visa_request = models.VisaRequest(**visa_request_data)
+    # db.add(db_visa_request)
+    # db.commit()
+    # db.refresh(db_visa_request)
     return db_visa_request
 
 def get_visa_request(db: Session, visa_request_id: int):

@@ -2,15 +2,15 @@ import os
 from fastapi import HTTPException, status
 import requests
 
-from app.config import settings
+from app.config.settings import settings
 
 class HdrService:
     def __init__(self):
         """
         Initialize the HdrService with the base URL from environment variables.
         """
-        print("abc" ,os.getenv("BASE_URL"))
-        self.base_url =  "http://localhost:8000"
+        # Fetch the base URL from environment variables
+        self.base_url =  settings.BASE_URL
 
         if not self.base_url:
             raise ValueError("HDR_SERVICE_BASE_URL environment variable is not set.")

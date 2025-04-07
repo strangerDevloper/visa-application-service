@@ -45,7 +45,7 @@ class Applications(Base):
     is_escilated = Column(Boolean, default=False)
 
     # Relationship with VisaRequest
-    visa_request = relationship('VisaRequest', backref="applications")
+    visa_request = relationship('VisaRequest', backref="applications", lazy="joined")
 
     # Relationship with ApplicationDetails
     application_details = relationship('ApplicationDetails', backref="application", cascade="all, delete-orphan")
