@@ -1,14 +1,20 @@
 # app/api/application/application_routes.py
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
+from app.config.aws import AWSService
 from app.config.database import get_db
 from app.api.application import application_types, application_service
 from app.helpers.auth import verify_bearer_token
+from app.models.applications import Applications
+from app.services.media_service import MediaService
 
 router = APIRouter(prefix="/application", tags=["application"])
+
+media_service = MediaService()
 
 @router.post("/visa-requests/", response_model=application_types.VisaRequest)
 def create_visa_request(
@@ -162,7 +168,7 @@ def get_filtered_applications(
     country_id: Optional[int] = Query(None),
     applicant_name: Optional[str] = Query(None),
     visa_process_id: Optional[int] = Query(None),
-    status: Optional[application_types.APPLICATION_STATUS_ENUM] = Query(None),
+    status: Optional[application_types.ApplicationStatusEnum] = Query(None),
     is_priority: Optional[bool] = Query(None),
     is_escalated: Optional[bool] = Query(None),
     start_date: Optional[datetime] = Query(None),
@@ -291,3 +297,94 @@ def assign_application(
         assignment_data=assignment_data,
         user_details=user_details
     )
+
+@router.put("/application-details/{application_detail_id}",
+           response_model=application_types.ApplicationDetail)
+def update_application_detail(
+    application_detail_id: int,
+    update_data: application_types.ApplicationDetailUpdate,
+    db: Session = Depends(get_db),
+    user_details: dict = Depends(verify_bearer_token)
+):
+    """
+    Update application detail field
+    
+    Can update:
+    - field_value: The actual value of the field
+    - verification_status: Change verification status (PENDING/VERIFIED/REJECTED)
+    - remark: Add a remark about the verification
+    
+    If all fields become verified, application status changes to APPROVED
+    """
+    # Set verified_by info from auth token
+    update_data.verified_by = user_details.get("user_id")
+    update_data.verified_by_name = user_details.get("name")
+    
+    return application_service.update_application_detail(
+        db=db,
+        application_detail_id=application_detail_id,
+        update_data=update_data,
+        user_details=user_details
+    )
+
+
+@router.post(
+    "/visa-requests/{visa_request_code}/applications/{application_code}/media",
+    response_model=application_types.BulkMediaUploadResponse,
+    status_code=201
+)
+async def upload_application_media(
+    visa_request_code: str,
+    application_code: str,
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+    user_details: dict = Depends(verify_bearer_token)
+):
+    """
+    Upload multiple media files for an application
+    
+    Files will be stored in:
+    s3://bucket-name/visa_requests/{visa_request_code}/{application_code}/
+    
+    Returns:
+    - Permanent S3 URLs
+    - Presigned URLs for immediate access
+    - S3 keys for future reference
+    """
+    # Verify application exists (optional)
+    application = db.query(Applications).filter(
+        Applications.application_code == application_code,
+        application_types.VisaRequest.visa_request_code == visa_request_code
+    ).join(application_types.VisaRequest).first()
+    
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    return await media_service.upload_media(
+        visa_request_code=visa_request_code,
+        application_code=application_code,
+        files=files
+    )
+
+@router.get(
+    "/media/{s3_key}",
+    responses={
+        200: {
+            "content": {"*/*": {}},
+            "description": "Returns the media file",
+        }
+    },
+    response_class=FileResponse
+)
+def get_media(
+    s3_key: str,
+    aws_service: AWSService = Depends(AWSService)
+):
+    """
+    Get media file via presigned URL (redirect)
+    """
+    try:
+        url = aws_service.generate_presigned_url(s3_key)
+        return RedirectResponse(url=url)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="File not found")

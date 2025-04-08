@@ -189,6 +189,14 @@ class ApplicationDetailCreate(BaseModel):
     field_type: FieldTypeEnum
     document_type: DocumentTypeEnum
 
+# Add to your existing schemas
+
+class ApplicationDetailUpdate(BaseModel):
+    field_value: Optional[str] = None
+    verification_status: Optional[VerificationStatusEnum] = None
+    remark: Optional[str] = None
+    verified_by: Optional[int] = None  # Will be set from auth token
+    verified_by_name: Optional[str] = None  # Will be set from auth token
 
 class ApplicationUpdate(BaseModel):
     applicant_first_name: Optional[str] = None
@@ -274,6 +282,16 @@ class RemarkFilter(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
 
+class MediaUploadResponse(BaseModel):
+    file_url: str
+    preview_url: str  # Presigned URL
+    s3_key: str
+
+class BulkMediaUploadResponse(BaseModel):
+    uploaded_files: List[MediaUploadResponse]
+    visa_request_code: str
+    application_code: str
+    
 # Response schemas
 class VisaRequest(VisaRequestBase):
     visa_request_id: int

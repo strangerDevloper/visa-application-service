@@ -3,8 +3,14 @@
 import boto3
 from botocore.exceptions import NoCredentialsError, ClientError
 import os
+from dotenv import load_dotenv
 from fastapi import HTTPException, UploadFile, status
-import uuid
+import mimetypes
+
+from app.config import settings
+
+load_dotenv()
+
 
 class AWSService:
     def __init__(self):
@@ -149,12 +155,46 @@ class AWSService:
                 detail=f"File replacement failed: {str(e)}"
             )
 
-    def generate_country_media_path(self, country_code: str) -> str:
-        """Generates path: countries/{country_code}/{fuid}"""
-        fuid = str(uuid.uuid4())
-        return f"countries/{country_code}/{fuid}"
-    
-    def generate_visa_media_path(self, country_code: str, visa_short_name: str) -> str:
-        """Generates path: visa/{country_code}/{visa_short_name}/{fuid}"""
-        fuid = str(uuid.uuid4())
-        return f"visa/{country_code}/{visa_short_name}/{fuid}"
+    async def upload_upload_file(self, file: UploadFile, s3_key: str) -> str:
+        """
+        Upload a FastAPI UploadFile directly to S3
+        Args:
+            file: FastAPI UploadFile object
+            s3_key: Full S3 path (e.g., 'visa_requests/VR123/APP456/file.jpg')
+        Returns:
+            S3 object URL
+        """
+        try:
+            # Detect content type
+            content_type = mimetypes.guess_type(file.filename)[0] or 'application/octet-stream'
+            
+            # Upload file
+            file.file.seek(0)
+            self.s3_client.upload_fileobj(
+                file.file,
+                self.bucket_name,
+                s3_key,
+                ExtraArgs={'ContentType': content_type}
+            )
+            
+            return f"https://{self.bucket_name}.s3.{self.region_name}.amazonaws.com/{s3_key}"
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"File upload failed: {str(e)}"
+            )
+
+    def validate_file_size(self, file: UploadFile, max_size_mb: int = 10) -> bool:
+        """
+        Validate file size
+        Args:
+            file: FastAPI UploadFile
+            max_size_mb: Maximum allowed size in MB
+        Returns:
+            bool: True if valid
+        """
+        max_bytes = max_size_mb * 1024 * 1024
+        file.file.seek(0, 2)  # Seek to end
+        file_size = file.file.tell()
+        file.file.seek(0)  # Reset pointer
+        return file_size <= max_bytes

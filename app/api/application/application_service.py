@@ -492,3 +492,86 @@ def assign_application_to_employee(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+def update_application_detail(
+    db: Session,
+    application_detail_id: int,
+    update_data: application_types.ApplicationDetailUpdate,
+    user_details: dict
+):
+    """
+    Update application detail field
+    - Can update field value, verification status, or add remark
+    - Automatically approves application if all details are verified
+    """
+    try:
+        # Get the application detail
+        detail = db.query(models.ApplicationDetails).filter(
+            models.ApplicationDetails.application_detail_id == application_detail_id
+        ).first()
+        
+        if not detail:
+            raise HTTPException(status_code=404, detail="Application detail not found")
+        
+        # Get the parent application
+        application = db.query(models.Applications).filter(
+            models.Applications.application_id == detail.application_id
+        ).first()
+        
+        # Update fields if provided
+        if update_data.field_value is not None:
+            detail.field_value = update_data.field_value
+        
+        if update_data.verification_status is not None:
+            detail.verification_status = update_data.verification_status
+            detail.verified_by = user_details.get("user_id")
+            detail.verified_by_name = user_details.get("name")
+            detail.verified_date = datetime.utcnow()
+        
+        if update_data.remark is not None:
+            # Add verification remark
+            remark = models.ApplicationRemarks(
+                application_id=detail.application_id,
+                remark_type="VERIFICATION",
+                remark_text=update_data.remark,
+                user_id=user_details.get("user_id"),
+                vendor_id=user_details.get("vendor_id"),
+                name=user_details.get("name"),
+                is_internal="YES"
+            )
+            db.add(remark)
+        
+        # Check if all details are verified
+        all_details = db.query(models.ApplicationDetails).filter(
+            models.ApplicationDetails.application_id == detail.application_id
+        ).all()
+        
+        all_verified = all(
+            d.verification_status == "VERIFIED" 
+            for d in all_details
+        )
+        
+        if all_verified:
+            application.application_status = "APPROVED"
+            application.modified_date = datetime.utcnow()
+            
+            # Add system remark
+            remark = models.ApplicationRemarks(
+                application_id=detail.application_id,
+                remark_type="SYSTEM",
+                remark_text="All documents verified - Application approved",
+                user_id=user_details.get("user_id"),
+                vendor_id=user_details.get("vendor_id"),
+                name="System",
+                is_internal="YES"
+            )
+            db.add(remark)
+        
+        db.commit()
+        db.refresh(detail)
+        return detail
+    
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
