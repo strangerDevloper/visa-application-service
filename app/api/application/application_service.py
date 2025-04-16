@@ -73,7 +73,7 @@ def get_visa_requests(
     if filters.vendor_id is not None:
         query = query.filter(models.VisaRequest.vendor_id == filters.vendor_id)
     if filters.counter_id is not None:
-        query = query.filter(models.VisaRequest.counter_id == filters.counter_id)
+        query = query.filter(models.VisaRequest.country_id == filters.counter_id)
     if filters.visa_process_id is not None:
         query = query.filter(models.VisaRequest.visa_process_id == filters.visa_process_id)
     if filters.initiator_name:
@@ -127,7 +127,7 @@ def create_application_with_details(
             raise HTTPException(status_code=404, detail="Visa request not found")
         
         # Generate application code
-        application_code = generate_application_code(db, visa_request.visa_request_code)
+        application_code = generate_application_code(db)
         
         # Create application
         db_application = models.Applications(
@@ -145,7 +145,7 @@ def create_application_with_details(
             expected_completion_date=application_data.expected_completion_date,
             application_notes=application_data.application_notes,
             is_priority=application_data.is_priority,
-            is_escalated=application_data.is_escalated,
+            is_escilated=application_data.is_escalated,
             # assigned_to and assigned_to_name remain None initially
         )
         
@@ -293,8 +293,8 @@ def get_applications(
         query = query.filter(models.Applications.is_escalated == filters.is_escalated)
     if filters.start_date and filters.end_date:
         query = query.filter(and_(
-            models.Applications.created_date >= filters.start_date,
-            models.Applications.created_date <= filters.end_date
+            models.Applications.submission_date >= filters.start_date,
+            models.Applications.submission_date <= filters.end_date
         ))
     
     # Get total count before pagination
@@ -302,7 +302,7 @@ def get_applications(
     
     # Apply pagination
     applications = query.order_by(
-        models.Applications.created_date.desc()
+        models.Applications.submission_date.desc()
     ).offset(
         (page - 1) * per_page
     ).limit(
