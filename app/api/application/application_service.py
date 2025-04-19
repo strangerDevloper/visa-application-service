@@ -332,9 +332,9 @@ def get_application_remarks(
     
     # Apply filters
     if filters.remark_type:
-        query = query.filter(models.ApplicationRemarks.remark_type == filters.remark_type)
+        query = query.filter(models.ApplicationRemarks.remark_type == filters.remark_type.value)
     if filters.is_internal:
-        query = query.filter(models.ApplicationRemarks.is_internal == filters.is_internal)
+        query = query.filter(models.ApplicationRemarks.is_internal == filters.is_internal.value)
     if filters.user_id:
         query = query.filter(models.ApplicationRemarks.user_id == filters.user_id)
     if filters.start_date and filters.end_date:
@@ -357,9 +357,7 @@ def get_application_remarks(
     
     return {
         "items": remarks,
-        "total": total,
-        "page": page,
-        "per_page": per_page
+        "total": total
     }
 
 from datetime import datetime

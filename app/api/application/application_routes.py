@@ -216,7 +216,7 @@ def get_filtered_applications(
     )
 
 @router.get("/applications/{application_id}/remarks", 
-           response_model=application_types.PaginatedResponse)
+           response_model=application_types.PaginatedRemarksResponse)
 def get_application_remarks(
     application_id: int,
     remark_type: Optional[application_types.RemarkTypeEnum] = Query(None),
@@ -246,13 +246,24 @@ def get_application_remarks(
         end_date=end_date
     )
     
-    return application_service.get_application_remarks(
+    result = application_service.get_application_remarks(
         db=db,
         application_id=application_id,
         filters=filters,
         page=page,
         per_page=per_page
     )
+    
+    # Calculate total pages
+    total_pages = (result["total"] + per_page - 1) // per_page
+    
+    return {
+        "items": result["items"],
+        "total": result["total"],
+        "page": page,
+        "per_page": per_page,
+        "total_pages": total_pages
+    }
 
 @router.post("/visa-requests/{visa_request_id}/submit",
             response_model=application_types.VisaRequest,

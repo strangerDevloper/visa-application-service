@@ -405,3 +405,26 @@ class PaginatedApplicationsResponse(BaseModel):
     page: int
     per_page: int
     total_pages: int
+
+
+class RemarkBase(BaseModel):
+    remark_id: int
+    application_id: int
+    remark_type: str
+    remark_text: str
+    user_id: int
+    vendor_id: int
+    employee_id: Optional[int] = None
+    name: Optional[str] = None
+    created_date: datetime
+    is_internal: str
+
+    class Config:
+        from_attributes = True  # Enables ORM mode
+
+class PaginatedRemarksResponse(BaseModel):
+    items: List[RemarkBase]
+    total: int = Field(..., description="Total number of remarks matching filters")
+    page: int = Field(..., description="Current page number", ge=1)
+    per_page: int = Field(..., description="Number of items per page", ge=1, le=100)
+    total_pages: int = Field(..., description="Total number of pages available")
