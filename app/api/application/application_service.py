@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app import models
 from app.api.application.application_utils import generate_application_code, generate_visa_request_code
+from app.config.hdrService import HdrService
 from app.core.constants import UserType
 from .  import application_types
 
@@ -290,7 +291,7 @@ def get_applications(
     if filters.is_priority is not None:
         query = query.filter(models.Applications.is_priority == filters.is_priority)
     if filters.is_escalated is not None:
-        query = query.filter(models.Applications.is_escalated == filters.is_escalated)
+        query = query.filter(models.Applications.is_escilated == filters.is_escalated)
     if filters.start_date and filters.end_date:
         query = query.filter(and_(
             models.Applications.submission_date >= filters.start_date,
@@ -313,7 +314,8 @@ def get_applications(
         "items": applications,
         "total": total,
         "page": page,
-        "per_page": per_page
+        "per_page": per_page,
+        "total_pages" : (total // per_page) + (1 if total % per_page > 0 else 0)
     }
 
 def get_application_remarks(
@@ -375,17 +377,17 @@ def get_internal_employee_details(employee_id: int) -> dict:
 def submit_visa_request(
     db: Session,
     visa_request_id: int,
-    submit_data: application_types.VisaRequestSubmit,
-    user_details: dict
+    user_details: dict,
+    hdr_service: HdrService,
 ):
     """
     Submit a visa request and all its applications
-    - Assigns all applications to an internal employee
+    - Validates employee assignment via HDR service
     - Updates statuses to PENDING
     - Creates assignment records
     """
     try:
-        # Get visa request with applications
+        # Get visa request
         visa_request = db.query(models.VisaRequest).filter(
             models.VisaRequest.visa_request_id == visa_request_id
         ).first()
@@ -400,7 +402,38 @@ def submit_visa_request(
                 detail="Visa request is not in DRAFT status"
             )
         
-        # Get all applications for this visa request
+        # Validate employee exists via HDR service
+        auth_token = user_details.get("access_token")  # Assuming token is in user_details
+        try:
+            employee_response = hdr_service.get_admin_employees(
+                auth_token=auth_token,
+                country_id=visa_request.country_id,  # Optional country filter
+                role_id=9,  # Optional role filter
+                limit=1  # We only need to verify the employee exists
+            )
+            
+            # Find the specific employee in response
+            employees = employee_response.get("employees", [])
+            if not len(employees):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Specified employee not found or doesn't have required permissions"
+                )
+            assigned_employee = employees[0]
+            
+            employee_name = f"{assigned_employee.get('first_name')} {assigned_employee.get('last_name')}"
+            employee_id = assigned_employee.get("employee_id")
+
+            print(f"Employee ID: {employee_id}, Name: {employee_name}")
+        except HTTPException as he:
+            raise he
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error validating employee: {str(e)}"
+            )
+        
+        # Get all applications
         applications = db.query(models.Applications).filter(
             models.Applications.visa_request_id == visa_request_id
         ).all()
@@ -411,16 +444,16 @@ def submit_visa_request(
                 detail="No applications found for this visa request"
             )
         
-        # Update visa request status
+        # Update visa request
         visa_request.visa_status = "PENDING"
         visa_request.modified_date = datetime.utcnow()
         
-        # Process each application
+        # Process applications
         for application in applications:
             # Update application status and assignment
             application.application_status = "PENDING"
-            application.assigned_to = submit_data.assigned_to
-            application.assigned_to_name = submit_data.assigned_to_name
+            application.assigned_to = employee_id  # From HDR service response
+            application.assigned_to_name = employee_name  # From HDR service response
             application.modified_date = datetime.utcnow()
             
             # Create assignment record
@@ -428,21 +461,31 @@ def submit_visa_request(
                 application_id=application.application_id,
                 assigned_by=user_details.get("user_id"),
                 assigned_by_name=user_details.get("name"),
-                assigned_to_name=submit_data.assigned_to_name,
-                assigned_to_user_id=submit_data.assigned_to,
-                assigned_to_vendor_id=None,  # Internal assignment
-                assigned_to_employee_id=submit_data.assigned_to,
+                assigned_to_name=employee_name,
+                assigned_to_user_id=None,  # Internal assignment
+                assigned_to_vendor_id=None,
+                assigned_to_employee_id=employee_id,
                 remarks="Initial assignment on visa request submission",
                 assignment_status="ASSIGNED"
             )
             db.add(assignment)
         
+        # Commit all changes
         db.commit()
         return visa_request
     
+    except HTTPException as he:
+        db.rollback()
+        raise he
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to submit visa request"
+        )
+
+
 
 def assign_application_to_employee(
     db: Session,

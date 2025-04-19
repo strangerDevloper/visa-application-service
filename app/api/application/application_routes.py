@@ -8,6 +8,7 @@ from typing import List, Optional
 from app.config.aws import AWSService
 from app.config.database import get_db
 from app.api.application import application_types, application_service
+from app.config.hdrService import HdrService
 from app.helpers.auth import verify_bearer_token
 from app.models.applications import Applications
 from app.services.media_service import MediaService
@@ -160,7 +161,7 @@ def update_application(
         update_data=update_data
     )
 
-@router.get("/applications/", response_model=application_types.PaginatedResponse)
+@router.get("/applications/", response_model=application_types.PaginatedApplicationsResponse)
 def get_filtered_applications(
     visa_request_code: Optional[str] = Query(None),
     application_code: Optional[str] = Query(None),
@@ -258,22 +259,22 @@ def get_application_remarks(
             status_code=200)
 def submit_visa_request(
     visa_request_id: int,
-    submit_data: application_types.VisaRequestSubmit,
     db: Session = Depends(get_db),
-    user_details: dict = Depends(verify_bearer_token)
+    user_details: dict = Depends(verify_bearer_token),
+    hdr_service: HdrService = Depends(HdrService)
 ):
     """
     Submit a visa request and all its applications
     - Changes status to PENDING for visa request and all applications
-    - Assigns all applications to the specified employee
+    - Assigns all applications to the specified employee (validated via HDR service)
     - Creates assignment history records
     - Requires visa request to be in DRAFT status
     """
     return application_service.submit_visa_request(
         db=db,
         visa_request_id=visa_request_id,
-        submit_data=submit_data,
-        user_details=user_details
+        user_details=user_details,
+        hdr_service=hdr_service
     )
 
 @router.post("/applications/{application_id}/assign",

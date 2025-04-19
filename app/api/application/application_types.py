@@ -100,6 +100,8 @@ class VisaRequestBase(BaseModel):
 
 class ApplicationBase(BaseModel):
     visa_request_id: int
+    application_code: str
+    application_id: Optional[int] = None
     applicant_first_name: str
     applicant_middle_name: Optional[str] = None
     applicant_last_name: Optional[str] = None
@@ -109,10 +111,34 @@ class ApplicationBase(BaseModel):
     applicant_dob: datetime
     applicant_gender: GenderEnum
     assigned_to: Optional[int] = None
+    application_status: ApplicationStatusEnum = ApplicationStatusEnum.PENDING
+    submission_date: datetime
     expected_completion_date: Optional[datetime] = None
     application_notes: Optional[str] = None
     is_priority: bool = False
     is_escalated: bool = False
+
+# class ApplicationBase(BaseModel):
+#     application_id: int
+#     application_code: str
+#     applicant_first_name: str
+#     applicant_middle_name: Optional[str]
+#     applicant_last_name: Optional[str]
+#     applicant_email: str
+#     applicant_phone: str
+#     applicant_passport_number: str
+#     applicant_dob: datetime
+#     applicant_gender: str
+#     application_status: str
+#     submission_date: datetime
+#     modified_date: Optional[datetime]
+#     is_priority: bool
+#     is_escalated: bool
+#     assigned_to: Optional[int]
+#     assigned_to_name: Optional[str]
+
+#     class Config:
+#         from_attributes = True
 
 class ApplicationDetailBase(BaseModel):
     application_id: int
@@ -364,3 +390,18 @@ class AssignmentCreate(BaseModel):
 class VisaRequestSubmit(BaseModel):
     assigned_to: int  # Internal employee ID
     assigned_to_name: str  # Internal employee name
+
+class VisaRequestBase(BaseModel):
+    visa_request_code: str
+    country_id: int
+    visa_process_id: int
+
+class ApplicationResponse(ApplicationBase):
+    visa_request: VisaRequestBase
+
+class PaginatedApplicationsResponse(BaseModel):
+    items: List[ApplicationResponse]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int

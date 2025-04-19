@@ -23,6 +23,7 @@ def verify_bearer_token(credentials: HTTPAuthorizationCredentials = Depends(secu
     # Call the HdrService to fetch user details
     try:
         user_details = hdr_service.get_current_logged_in_user(token)
+        user_details['access_token'] = token  # Add the token to the user details
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
